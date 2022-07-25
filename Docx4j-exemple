@@ -1,0 +1,120 @@
+package org.example;
+
+import org.docx4j.jaxb.Context;
+import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
+import org.docx4j.wml.*;
+
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.List;
+
+public class HMergeExample {
+
+    private static WordprocessingMLPackage wordMLPackage;
+    private static ObjectFactory factory;
+
+    public static void main(String[] args) throws Exception {
+
+        WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage
+                .load(new java.io.File("src/main/files/template.docx"));
+        factory = Context.getWmlObjectFactory();
+
+        Tbl tbl = Context.getWmlObjectFactory().createTbl();
+        addBorders(tbl);
+
+        int writableWidthTwips = wordMLPackage.getDocumentModel().getSections().get(0).getPageDimensions().getWritableWidthTwips();
+        int cellWidthTwips = writableWidthTwips/4;
+
+        TblWidth tableWidth = new TblWidth();
+        tableWidth.setType("auto");
+        tableWidth.setW(BigInteger.valueOf(writableWidthTwips));
+
+        TblWidth cellWidth = new TblWidth();
+        cellWidth.setType("auto");
+        cellWidth.setW(BigInteger.valueOf(cellWidthTwips));
+
+        tbl.getTblPr().setTblW(tableWidth);
+
+        String[] h1 = {"val1","val2"};
+        String[] h2 = {"ce que ça donne  sdsdsdsd","ce que ça donne sdsfsf","ce que ça donne sdsdsds","ce que ça donne sdsdsd ssdsfs","ce que ça donne sfsfsffsf ssfsfsf","ce que ça donne sdsfsfsfs","ce que ça donne sdfsfssfssf","val4 fsffs sdsfsfsfs"};
+        String[] b1 = {"val1","val2","val3","val4","val1 ","ce que ça donne","val3","val4"};
+        String[] b2 = {"val1","val2","val3","val4","val1 ","ce que ça donne","val3","val4"};
+
+        List<String[]> rows = Arrays.asList(h1,h2,b1,b2);
+
+        int rowCounter = 0;
+        for(String[] row: rows){
+
+            Tr tr = factory.createTr();
+
+            for(String field: row){
+                TcPrInner.GridSpan gridSpan = new TcPrInner.GridSpan();
+                TcPr tcpr = new TcPr();
+                gridSpan.setVal(BigInteger.valueOf(8/row.length));
+                tcpr.setGridSpan(gridSpan);
+                tcpr.setTcW(cellWidth);
+
+                Tc tc = factory.createTc();
+                tc.setTcPr(tcpr);
+
+                P p = factory.createP();
+                R r = factory.createR();
+                Text t = factory.createText();
+                t.setValue(field);
+                r.getContent().add(t);
+                p.getContent().add(r);
+                RPr rpr = factory.createRPr();
+
+                RFonts font = new RFonts();
+                font.setAscii("Palatino Linotype");
+                rpr.setRFonts(font);
+                r.setRPr(rpr);
+
+                // Centrer le Text
+                PPr ppr = factory.createPPr();
+                Jc justification = factory.createJc();
+                justification.setVal(JcEnumeration.CENTER);
+
+ppr.setJc(justification);
+                
+                p.setPPr(ppr);
+
+                if(rowCounter == 0){
+                    CTShd shd = factory.createCTShd();
+                    shd.setVal(org.docx4j.wml.STShd.CLEAR);
+                    shd.setColor( "auto");
+                    shd.setFill( "#b82a7a");
+                    shd.setThemeFill(org.docx4j.wml.STThemeColor.LIGHT_2);
+                    shd.setThemeFillTint( "66");
+                    tc.getTcPr().setShd(shd);
+                }
+                
+                tc.getContent().add(p);
+                tr.getContent().add(tc);
+            }
+            tbl.getContent().add(tr);
+            rowCounter++;
+        }
+        wordMLPackage.getMainDocumentPart().getContent().add(tbl);
+        wordMLPackage.save(new java.io.File("src/main/files/HMergeExample.docx") );
+    }
+    
+    private static void addBorders(Tbl table) {
+        table.setTblPr(new TblPr());
+        CTBorder border = new CTBorder();
+        border.setColor("auto");
+        border.setSz(new BigInteger("4"));
+        border.setSpace(new BigInteger("0"));
+        border.setVal(STBorder.SINGLE);
+
+        TblBorders borders = new TblBorders();
+        borders.setBottom(border);
+        borders.setLeft(border);
+        borders.setRight(border);
+        borders.setTop(border);
+        borders.setInsideH(border);
+        borders.setInsideV(border);
+        table.getTblPr().setTblBorders(borders);
+    }
+
+}
