@@ -1,0 +1,165 @@
+package org.example;
+
+import com.google.common.base.Splitter;
+import org.docx4j.Docx4J;
+import org.docx4j.convert.out.FOSettings;
+import org.docx4j.jaxb.Context;
+import org.docx4j.model.table.TblFactory;
+import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
+import org.docx4j.wml.*;
+
+import java.io.File;
+import java.io.OutputStream;
+import java.math.BigInteger;
+import java.util.List;
+
+public class CreateStyledTableExample {
+
+    private static ObjectFactory factory;
+
+    public static void main(String[] args) throws Exception {
+
+        WordprocessingMLPackage wordPackage = WordprocessingMLPackage.load(new java.io.File("src/main/files/template.docx"));
+        factory = Context.getWmlObjectFactory();
+
+        int writableWidthTwips = wordPackage.getDocumentModel().getSections().get(0).getPageDimensions().getWritableWidthTwips();
+        int columnNumber = 8;
+
+        Tbl tbl = TblFactory.createTable(4, 8, writableWidthTwips / columnNumber);
+        addTableBorders(tbl);
+
+        String contentOriginal = "Palatino Linotypeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+        String newContent =  "";
+        for(final String substring : Splitter.fixedLength(8).split(contentOriginal)){
+            System.out.println(substring);
+            newContent = newContent + substring + System.getProperty("line.separator");
+        }
+
+        System.out.println(newContent);
+
+        List<Object> rows = tbl.getContent();
+        int rowCounter = 0;
+        for (Object row : rows) {
+            Tr tr = (Tr) row;
+            List<Object> cells = tr.getContent();
+            int cellCounter = 0;
+            for (Object cell : cells) {
+                Tc td = (Tc) cell;
+                P p = createStyledParagraph(newContent);
+                td.getContent().add(p);
+                cellCounter++;
+
+                if(rowCounter==0){
+                    addCellBorders(td);
+                    CTShd shd = factory.createCTShd();
+                    shd.setVal(org.docx4j.wml.STShd.CLEAR);
+                    shd.setColor( "auto");
+                    //shd.setFill( "D0CECE");   // ça donne un grey foncé
+                    shd.setFill( "E7E6E6");
+                    shd.setThemeFill(STThemeColor.BACKGROUND_2);
+                    shd.setThemeFillTint( "66");
+                    td.getTcPr().setShd(shd);
+
+
+                    BooleanDefaultTrue b = new BooleanDefaultTrue();
+                    b.setVal(false);
+                    td.getTcPr().setNoWrap(new BooleanDefaultTrue());
+
+                    TblWidth tdw = new TblWidth();
+                    tdw.setType("dxa");
+                    td.getTcPr().setTcW(tdw);
+                }
+            }
+            rowCounter++;
+        }
+
+        wordPackage.getMainDocumentPart().getContent().add(tbl);
+
+        File tmpFile = new File("C:\\docx4j\\HMergeExample.docx");
+        OutputStream tmpOs = new java.io.FileOutputStream(tmpFile);
+        wordPackage.save(tmpOs);
+
+        File file = new File("./src/main/files/HMergeExample.pdf");
+        OutputStream os = new java.io.FileOutputStream(file);
+
+        FOSettings settings = new FOSettings();
+        settings.setWmlPackage(wordPackage);
+        Docx4J.toFO(settings, os, Docx4J.FLAG_EXPORT_PREFER_XSL);
+
+        os.flush();
+        os.close();
+
+
+    }
+
+    private static P createStyledParagraph(String content){
+        P p = factory.createP();
+        R r = factory.createR();
+        Text t = factory.createText();
+        t.setValue(content);
+        r.getContent().add(t);
+        p.getContent().add(r);
+        RPr rpr = factory.createRPr();
+
+        RFonts font = new RFonts();
+        font.setAscii("Palatino Linotype");
+        rpr.setRFonts(font);
+        r.setRPr(rpr);
+
+        // Centrer le Text
+        PPr ppr = factory.createPPr();
+        Jc justification = factory.createJc();
+        justification.setVal(JcEnumeration.CENTER);
+        ppr.setJc(justification);
+        p.setPPr(ppr);
+
+        ppr.setSuppressOverlap(new BooleanDefaultTrue());
+
+        BooleanDefaultTrue b = new BooleanDefaultTrue();
+        b.setVal(false);
+        ppr.setKeepLines(b);
+        return p;
+    }
+
+    private static void addTableBorders(Tbl table) {
+        CTBorder border = new CTBorder();
+        border.setColor("auto");
+        border.setSz(new BigInteger("4"));
+        border.setSpace(new BigInteger("0"));
+        border.setVal(STBorder.SINGLE);
+
+        TblBorders borders = new TblBorders();
+        borders.setBottom(border);
+        borders.setLeft(border);
+        borders.setRight(border);
+        borders.setTop(border);
+        borders.setInsideH(border);
+        borders.setInsideV(border);
+        table.getTblPr().setTblBorders(borders);
+
+        CTTblCellMar cTTblCellMar = new CTTblCellMar();
+        TblWidth cTTblCellMarWidth = new TblWidth();
+        cTTblCellMarWidth.setW(new BigInteger("300"));
+        cTTblCellMar.setBottom(cTTblCellMarWidth);
+
+        table.getTblPr().setTblCellMar(cTTblCellMar);
+
+
+//        CTTblOverlap cTTblOverlap = new CTTblOverlap();
+//        cTTblOverlap.setVal(STTblOverlap.OVERLAP);
+//        table.getTblPr().setTblOverlap(cTTblOverlap);
+
+    }
+
+
+    private static void addCellBorders(Tc tc) {
+        CTBorder border = new CTBorder();
+        border.setVal(STBorder.NONE);
+
+        TcPrInner.TcBorders borders = new TcPrInner.TcBorders();
+        borders.setLeft(border);
+        borders.setRight(border);
+        tc.getTcPr().setTcBorders(borders);
+    }
+
+}
