@@ -111,7 +111,7 @@ public class CreateStyledTableExample {
         os3.flush();
         os3.close();
 
-        manipulatePdf("./src/main/files/Example-pdf-3.pdf","./src/main/files/Example-pdf-4.pdf");
+        addPageNumber("./src/main/files/Example-pdf-3.pdf","./src/main/files/Example-pdf-4.pdf");
 
     }
 
@@ -220,7 +220,7 @@ public class CreateStyledTableExample {
     }
 
 
-    public static void manipulatePdf(String src, String dest) throws IOException, DocumentException {
+    public static void addPageNumber(String src, String dest) throws IOException, DocumentException {
         PdfReader reader = new PdfReader(src);
         int n = reader.getNumberOfPages();
         PdfStamper stamper = new PdfStamper(reader, new FileOutputStream(dest));
