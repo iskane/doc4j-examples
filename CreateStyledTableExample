@@ -18,7 +18,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-public class HMergeExample {
+public class CreateStyledTableExample {
 
     private static ObjectFactory factory;
 
